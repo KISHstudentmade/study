@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>방학 학습 캘린더</title>
+<style>
+  :root{
+    --bg:#EAEDF3;--surface:#fff;--ink:#1E2230;--muted:#6C7280;--line:#E4E7EE;
+    --deep:#242A54;--deep2:#333C7A;--accent:#E6A23C;--accent-soft:#FBEED6;
+    --kor:#C25E7A;--mat:#3F6FB5;--his:#B8863B;--soc:#3E8E7E;--sci:#7B62B8;
+    --sans:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.55;
+    -webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+  .wrap{max-width:640px;margin:0 auto;padding:0 14px 56px}
+
+  .hero{background:linear-gradient(150deg,var(--deep),var(--deep2));color:#fff;
+    border-radius:0 0 24px 24px;padding:26px 20px 22px;margin:0 -14px 20px}
+  .hero .eyebrow{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:#B9BEE8;font-weight:600}
+  .hero h1{font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:8px}
+  .hero .sub{color:#C9CDEC;font-size:13.5px;margin-top:9px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+  .chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);
+    padding:6px 11px;border-radius:999px;font-size:12px;font-weight:600}
+  .chip b{color:var(--accent);font-variant-numeric:tabular-nums}
+
+  .legend{display:flex;flex-wrap:wrap;gap:9px;margin:2px 0 16px;font-size:11.5px;color:#4A4F5C}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i{width:10px;height:10px;border-radius:3px;flex:none}
+
+  .prog{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:11px 14px;margin-bottom:18px}
+  .prog-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .prog-top b{font-size:15px;font-variant-numeric:tabular-nums}
+  .prog-top small{color:var(--muted);font-size:12px}
+  .pbar{height:8px;background:#EAECF2;border-radius:99px;overflow:hidden}
+  .pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--deep2),var(--accent));transition:width .5s}
+
+  .month{margin-bottom:22px}
+  .month h2{font-size:16px;font-weight:800;margin-bottom:10px;padding-left:2px}
+  .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:5px}
+  .dow span{text-align:center;font-size:11px;font-weight:700;color:var(--muted)}
+  .dow span:nth-child(6){color:#3F6FB5}.dow span:nth-child(7){color:#C0392B}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .cell{aspect-ratio:1/1.08;border-radius:10px;background:var(--surface);border:1px solid var(--line);
+    padding:5px 4px 4px;display:flex;flex-direction:column;cursor:pointer;position:relative;
+    transition:transform .1s,box-shadow .15s}
+  .cell.empty{background:transparent;border:none;cursor:default}
+  .cell.active:active{transform:scale(.95)}
+  .cell .dn{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  .cell .tp{font-size:8.5px;font-weight:700;margin-top:auto;line-height:1.1;
+    padding:2px 3px;border-radius:4px;color:#fff;text-align:center;
+    overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .cell .cnt{position:absolute;top:4px;right:5px;font-size:8.5px;color:var(--muted);font-weight:700}
+  .cell.sel{box-shadow:0 0 0 2.5px var(--deep);border-color:var(--deep)}
+  .cell.today .dn{color:var(--accent)}
+  .cell.today::before{content:"";position:absolute;top:5px;left:5px;width:5px;height:5px;
+    border-radius:50%;background:var(--accent)}
+
+  .detail{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:0;overflow:hidden;scroll-margin-top:12px}
+  .dhead{padding:15px 18px;color:#fff;display:flex;align-items:center;gap:10px}
+  .dhead .dd{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+  .dhead .dw{font-size:13px;opacity:.85;font-weight:600}
+  .dhead .dt{margin-left:auto;font-size:12px;font-weight:700;background:rgba(255,255,255,.18);
+    padding:4px 11px;border-radius:999px}
+  .dbody{padding:8px 16px 16px}
+  .grp{margin-top:12px}
+  .grp-l{font-size:11.5px;font-weight:800;letter-spacing:.02em;color:var(--muted);
+    margin:0 0 7px 2px;display:flex;align-items:center;gap:6px}
+  .grp-l .badge{font-size:10px;color:#8A5A12;background:var(--accent-soft);border:1px solid var(--accent);
+    padding:1px 6px;border-radius:5px;font-weight:700}
+  .task{display:flex;align-items:flex-start;gap:10px;padding:9px 10px;border-radius:10px;
+    border:1px solid var(--line);margin-bottom:6px;cursor:pointer;transition:background .12s}
+  .task:active{background:#F5F6FA}
+  .task.done{background:#F6F8F6;border-color:#E0E6E0}
+  .cbox{width:19px;height:19px;border-radius:6px;border:2px solid #C7CCD6;flex:none;margin-top:1px;
+    display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .task.done .cbox{background:var(--soc);border-color:var(--soc)}
+  .cbox svg{width:11px;height:11px;opacity:0}
+  .task.done .cbox svg{opacity:1}
+  .tinfo{flex:1;min-width:0}
+  .ttxt{font-size:13.5px;font-weight:600}
+  .task.done .ttxt{color:var(--muted);text-decoration:line-through}
+  .tmeta{display:flex;align-items:center;gap:6px;margin-top:2px}
+  .sdot{width:8px;height:8px;border-radius:50%;flex:none}
+  .stag{font-size:10.5px;color:var(--muted);font-weight:600}
+  .note{margin-top:14px;font-size:12px;color:#565C6C;background:#EEF0F6;border-radius:10px;
+    padding:10px 12px;line-height:1.6}
+  .note b{color:var(--ink)}
+  .empty-day{padding:22px;text-align:center;color:var(--muted);font-size:13px}
+
+  .foot{margin-top:26px;font-size:12px;color:#565C6C;text-align:center;line-height:1.7}
+  .foot b{color:var(--ink)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">학기 전 가볍게 예습</div>
+    <h1>방학 예습 캘린더</h1>
+    <p class="sub">학기 때 처음 배우는 느낌을 줄이려고 미리 슬쩍 보는 플래너예요. 날짜를 누르면 그날 볼 단원이 떠요. 부담 없이 하루 한두 개씩.</p>
+    <div class="chips">
+      <div class="chip">7/14 – 8/19</div>
+      <div class="chip">종료까지 <b id="dday">–</b>일</div>
+      <div class="chip">D<b id="dpass">–</b></div>
+    </div>
+  </header>
+
+  <div class="legend">
+    <span><i style="background:#242A54"></i>예습</span>
+    <span><i style="background:#3E8E7E"></i>훑어보기</span>
+    <span><i style="background:#8AA0B8"></i>여유일</span>
+    <span><i style="background:#9AA0AE"></i>쉬는 날</span>
+  </div>
+
+  <div class="prog">
+    <div class="prog-top"><b><span id="pc">0</span> / <span id="pt">0</span> 완료</b><small id="pp">0%</small></div>
+    <div class="pbar"><i id="pf"></i></div>
+  </div>
+
+  <div id="months"></div>
+
+  <div class="detail" id="detail"></div>
+
+  <p class="foot">완벽히 외우려 하지 말고 <b>"아, 이런 걸 배우는구나"</b> 정도로 가볍게.<br>밀려도 괜찮아요 — 체크는 저장되니 편할 때 이어서 보면 됩니다.</p>
+</div>
+
+<script>
+const DAYS=[{"date": "2026-07-14", "md": "7/14", "dow": "화", "tasks": [{"kind": "new", "subj": "soc", "txt": "사회 1단원 ①"}, {"kind": "new", "subj": "his", "txt": "역사 1단원 ①"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-15", "md": "7/15", "dow": "수", "tasks": [{"kind": "new", "subj": "kor", "txt": "국어 1단원 ①"}, {"kind": "new", "subj": "sci", "txt": "과학 1단원 ①"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-16", "md": "7/16", "dow": "목", "tasks": [{"kind": "new", "subj": "soc", "txt": "사회 1단원 ②"}, {"kind": "new", "subj": "his", "txt": "역사 1단원 ②"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-17", "md": "7/17", "dow": "금", "tasks": [{"kind": "new", "subj": "kor", "txt": "국어 1단원 ②"}, {"kind": "new", "subj": "soc", "txt": "사회 1단원 ③"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-18", "md": "7/18", "dow": "토", "tasks": [{"kind": "new", "subj": "his", "txt": "역사 1단원 ③"}, {"kind": "new", "subj": "kor", "txt": "국어 2단원 ①"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-19", "md": "7/19", "dow": "일", "tasks": [], "note": "완전 휴식 — 잘 쉬는 것도 방학이에요.", "type": "쉬는 날", "color": "#9AA0AE"}, {"date": "2026-07-20", "md": "7/20", "dow": "월", "tasks": [{"kind": "new", "subj": "soc", "txt": "사회 2단원 ①"}, {"kind": "new", "subj": "sci", "txt": "과학 1단원 ②"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-21", "md": "7/21", "dow": "화", "tasks": [{"kind": "new", "subj": "soc", "txt": "사회 2단원 ②"}, {"kind": "new", "subj": "his", "txt": "역사 1단원 ④"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-22", "md": "7/22", "dow": "수", "tasks": [], "note": "완전 휴식 — 잘 쉬는 것도 방학이에요.", "type": "쉬는 날", "color": "#9AA0AE"}, {"date": "2026-07-23", "md": "7/23", "dow": "목", "tasks": [{"kind": "new", "subj": "kor", "txt": "국어 2단원 ②"}, {"kind": "new", "subj": "soc", "txt": "사회 2단원 ③"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-24", "md": "7/24", "dow": "금", "tasks": [{"kind": "new", "subj": "his", "txt": "역사 1단원 ⑤"}, {"kind": "new", "subj": "kor", "txt": "국어 2단원 ③"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-25", "md": "7/25", "dow": "토", "tasks": [{"kind": "new", "subj": "soc", "txt": "사회 3단원 ①"}, {"kind": "new", "subj": "sci", "txt": "과학 2단원 ①"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-26", "md": "7/26", "dow": "일", "tasks": [{"kind": "new", "subj": "his", "txt": "역사 2단원 ①"}, {"kind": "new", "subj": "kor", "txt": "국어 3단원 ①"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-27", "md": "7/27", "dow": "월", "tasks": [{"kind": "new", "subj": "soc", "txt": "사회 3단원 ②"}, {"kind": "new", "subj": "soc", "txt": "사회 3단원 ③"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-28", "md": "7/28", "dow": "화", "tasks": [{"kind": "new", "subj": "his", "txt": "역사 2단원 ②"}, {"kind": "new", "subj": "kor", "txt": "국어 3단원 ②"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-29", "md": "7/29", "dow": "수", "tasks": [{"kind": "new", "subj": "sci", "txt": "과학 2단원 ②"}, {"kind": "new", "subj": "soc", "txt": "사회 3단원 ④"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-30", "md": "7/30", "dow": "목", "tasks": [{"kind": "new", "subj": "his", "txt": "역사 2단원 ③"}, {"kind": "new", "subj": "kor", "txt": "국어 3단원 ③"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-07-31", "md": "7/31", "dow": "금", "tasks": [{"kind": "new", "subj": "soc", "txt": "사회 4단원 ①"}, {"kind": "new", "subj": "his", "txt": "역사 2단원 ④"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-08-01", "md": "8/1", "dow": "토", "tasks": [{"kind": "new", "subj": "kor", "txt": "국어 3단원 ④"}, {"kind": "new", "subj": "soc", "txt": "사회 4단원 ②"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-08-02", "md": "8/2", "dow": "일", "tasks": [], "note": "완전 휴식 — 잘 쉬는 것도 방학이에요.", "type": "쉬는 날", "color": "#9AA0AE"}, {"date": "2026-08-03", "md": "8/3", "dow": "월", "tasks": [{"kind": "new", "subj": "sci", "txt": "과학 3단원 ①"}, {"kind": "new", "subj": "soc", "txt": "사회 4단원 ③"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-08-04", "md": "8/4", "dow": "화", "tasks": [{"kind": "new", "subj": "his", "txt": "역사 3단원 ①"}, {"kind": "new", "subj": "kor", "txt": "국어 4단원 ①"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-08-05", "md": "8/5", "dow": "수", "tasks": [{"kind": "new", "subj": "soc", "txt": "사회 5단원 ①"}, {"kind": "new", "subj": "his", "txt": "역사 3단원 ②"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-08-06", "md": "8/6", "dow": "목", "tasks": [{"kind": "new", "subj": "kor", "txt": "국어 4단원 ②"}, {"kind": "new", "subj": "soc", "txt": "사회 5단원 ②"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-08-07", "md": "8/7", "dow": "금", "tasks": [{"kind": "new", "subj": "sci", "txt": "과학 3단원 ②"}, {"kind": "new", "subj": "his", "txt": "역사 3단원 ③"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-08-08", "md": "8/8", "dow": "토", "tasks": [{"kind": "new", "subj": "kor", "txt": "국어 4단원 ③"}, {"kind": "new", "subj": "soc", "txt": "사회 5단원 ③"}], "note": "완벽히 외우지 말고 \"이런 내용이구나\" 정도로 가볍게 훑기", "type": "예습", "color": "#242A54"}, {"date": "2026-08-09", "md": "8/9", "dow": "일", "tasks": [], "note": "완전 휴식 — 잘 쉬는 것도 방학이에요.", "type": "쉬는 날", "color": "#9AA0AE"}, {"date": "2026-08-10", "md": "8/10", "dow": "월", "tasks": [{"kind": "recap", "subj": "soc", "txt": "사회 전체 훑어보기 (제목·큰 흐름만)"}], "note": "", "type": "훑어보기", "color": "#3E8E7E"}, {"date": "2026-08-11", "md": "8/11", "dow": "화", "tasks": [{"kind": "recap", "subj": "his", "txt": "역사 전체 훑어보기 (흐름 위주)"}], "note": "", "type": "훑어보기", "color": "#3E8E7E"}, {"date": "2026-08-12", "md": "8/12", "dow": "수", "tasks": [{"kind": "recap", "subj": "kor", "txt": "국어 전체 훑어보기 (지문·개념)"}], "note": "", "type": "훑어보기", "color": "#3E8E7E"}, {"date": "2026-08-13", "md": "8/13", "dow": "목", "tasks": [{"kind": "recap", "subj": "sci", "txt": "과학 전체 훑어보기 (핵심 개념)"}], "note": "", "type": "훑어보기", "color": "#3E8E7E"}, {"date": "2026-08-14", "md": "8/14", "dow": "금", "tasks": [{"kind": "recap", "subj": "soc", "txt": "어려웠던 단원만 다시 보기 (직접 선택)"}], "note": "", "type": "훑어보기", "color": "#3E8E7E"}, {"date": "2026-08-15", "md": "8/15", "dow": "토", "tasks": [{"kind": "recap", "subj": "his", "txt": "전 과목 목차로 큰 그림 잡기"}], "note": "", "type": "훑어보기", "color": "#3E8E7E"}, {"date": "2026-08-16", "md": "8/16", "dow": "일", "tasks": [], "note": "완전 휴식 — 잘 쉬는 것도 방학이에요.", "type": "쉬는 날", "color": "#9AA0AE"}, {"date": "2026-08-17", "md": "8/17", "dow": "월", "tasks": [{"kind": "recap", "subj": "kor", "txt": "헷갈리는 것 있으면 가볍게 다시 보기"}], "note": "", "type": "여유일", "color": "#8AA0B8"}, {"date": "2026-08-18", "md": "8/18", "dow": "화", "tasks": [{"kind": "recap", "subj": "sci", "txt": "새 학기 교과서·준비물 정리"}], "note": "", "type": "여유일", "color": "#8AA0B8"}, {"date": "2026-08-19", "md": "8/19", "dow": "수", "tasks": [{"kind": "recap", "subj": "soc", "txt": "푹 쉬고 상쾌하게 학기 맞이하기"}], "note": "", "type": "마무리", "color": "#8AA0B8"}];
+const SUB={kor:'#C25E7A',mat:'#3F6FB5',his:'#B8863B',soc:'#3E8E7E',sci:'#7B62B8'};
+const SNAME={kor:'국어',mat:'수학',his:'역사',soc:'사회',sci:'과학'};
+const KIND={new:'예습',recap:'훑어보기',};
+const byDate={};DAYS.forEach(d=>byDate[d.date]=d);
+
+/* storage */
+const KEY='cal-v2';const mem={};
+async function load(){try{const r=await window.storage.get(KEY);if(r&&r.value)return JSON.parse(r.value);}catch(e){}return mem[KEY]||{};}
+async function persist(){mem[KEY]=STATE;try{await window.storage.set(KEY,JSON.stringify(STATE),false);}catch(e){}}
+let STATE={};
+
+const todayISO=(()=>{const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');})();
+let selected=byDate[todayISO]?todayISO:DAYS[0].date;
+
+function shortType(t){return {'예습':'예습','훑어보기':'훑기','여유일':'여유','마무리':'마무리','쉬는 날':'휴식'}[t]||t;}
+
+function renderMonths(){
+  const box=document.getElementById('months');
+  const months=[[2026,7,'7월'],[2026,8,'8월']];
+  box.innerHTML=months.map(([y,m,lab])=>{
+    const first=new Date(y,m-1,1);
+    const lead=(first.getDay()+6)%7; // Mon-first
+    const dim=new Date(y,m,0).getDate();
+    let cells='';
+    for(let i=0;i<lead;i++)cells+='<div class="cell empty"></div>';
+    for(let day=1;day<=dim;day++){
+      const iso=y+'-'+String(m).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      const d=byDate[iso];
+      if(!d){cells+='<div class="cell empty"><div class="dn" style="color:#C2C7D2">'+day+'</div></div>';continue;}
+      const cls=['cell','active'];if(iso===selected)cls.push('sel');if(iso===todayISO)cls.push('today');
+      const n=d.tasks.length;
+      cells+='<div class="'+cls.join(' ')+'" data-d="'+iso+'">'
+        +'<div class="dn">'+day+'</div>'
+        +(n?'<div class="cnt">'+n+'</div>':'')
+        +'<div class="tp" style="background:'+d.color+'">'+shortType(d.type)+'</div></div>';
+    }
+    return '<div class="month"><h2>'+lab+'</h2>'
+      +'<div class="dow"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>'
+      +'<div class="grid">'+cells+'</div></div>';
+  }).join('');
+}
+
+function tid(date,i){return date+'#'+i;}
+function renderDetail(){
+  const d=byDate[selected];const el=document.getElementById('detail');
+  if(!d){el.innerHTML='<div class="empty-day">이 날은 계획이 없어요.</div>';return;}
+  const [Y,M,D]=d.date.split('-');
+  // group tasks
+  const groups={};
+  d.tasks.forEach((t,i)=>{
+    let g=KIND[t.kind]||'할 일';
+    if(t.kind==='rev'&&t.off)g='복습 (+'+t.off+'일 전 배운 것)';
+    (groups[g]=groups[g]||[]).push({t,i});
+  });
+  const order=Object.keys(groups).sort((a,b)=>{
+    const rank=x=>x.startsWith('신규')?0:x.startsWith('복습 (+1')?1:x.startsWith('복습 (+3')?2:x.startsWith('복습 (+7')?3:x.startsWith('복습')?4:x.startsWith('심화')?5:x.startsWith('모의')?6:7;
+    return rank(a)-rank(b);
+  });
+  let body='';
+  order.forEach(g=>{
+    body+='<div class="grp"><div class="grp-l">'+g+'</div>';
+    groups[g].forEach(({t,i})=>{
+      const id=tid(d.date,i);const done=!!STATE[id];
+      body+='<div class="task'+(done?' done':'')+'" data-t="'+id+'">'
+        +'<div class="cbox"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="M4 12l5 5L20 6"/></svg></div>'
+        +'<div class="tinfo"><div class="ttxt">'+t.txt+'</div>'
+        +'<div class="tmeta"><span class="sdot" style="background:'+SUB[t.subj]+'"></span>'
+        +'<span class="stag">'+SNAME[t.subj]+'</span></div></div></div>';
+    });
+    body+='</div>';
+  });
+  if(!d.tasks.length)body='<div class="empty-day">할 일이 없는 날이에요. 푹 쉬기!</div>';
+  el.innerHTML='<div class="dhead" style="background:'+d.color+'">'
+      +'<div class="dd">'+(+M)+'/'+(+D)+'</div><div class="dw">'+d.dow+'요일</div>'
+      +'<div class="dt">'+d.type+'</div></div>'
+    +'<div class="dbody">'+body
+    +(d.note?'<div class="note"><b>💡</b> '+d.note+'</div>':'')+'</div>';
+}
+
+function updateProgress(){
+  let total=0,done=0;
+  DAYS.forEach(d=>d.tasks.forEach((t,i)=>{total++;if(STATE[tid(d.date,i)])done++;}));
+  document.getElementById('pc').textContent=done;
+  document.getElementById('pt').textContent=total;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('pp').textContent=pct+'%';
+  document.getElementById('pf').style.width=pct+'%';
+}
+function updateDday(){
+  const end=new Date(2026,7,19),st=new Date(2026,6,14),now=new Date();
+  document.getElementById('dday').textContent=Math.max(0,Math.ceil((end-now)/86400000));
+  const passed=Math.floor((now-st)/86400000);
+  document.getElementById('dpass').textContent=(passed<0?'-':'+')+Math.abs(passed);
+}
+
+document.addEventListener('click',e=>{
+  const cell=e.target.closest('.cell.active');
+  if(cell){selected=cell.dataset.d;renderMonths();renderDetail();
+    document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'start'});return;}
+  const task=e.target.closest('.task');
+  if(task){const id=task.dataset.t;STATE[id]=!STATE[id];persist();
+    task.classList.toggle('done',STATE[id]);updateProgress();renderMonths();}
+});
+
+(async function(){
+  STATE=await load();
+  updateDday();renderMonths();renderDetail();updateProgress();
+})();
+</script>
+</body>
+</html>
